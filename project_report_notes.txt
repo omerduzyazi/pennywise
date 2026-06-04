@@ -435,3 +435,52 @@ requiring any changes to the API controllers or frontend.
 ================================================================================
   END OF STEP 4 NOTES
 ================================================================================
+
+
+================================================================================
+  STEP 5 — Final Audit, Integration Test Fixes & LINQ Aggregation
+================================================================================
+
+Generated: 2026-06-04
+Phase: Step 5 — Production Readiness & Architecture Audit
+
+────────────────────────────────────────────────────────────────────────────────
+18. AGGRESSIVE LINQ AGGREGATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+To fully satisfy the requirement for "aggressive LINQ queries," the transaction
+summary and budget status calculations were refactored to explicitly utilize
+the LINQ GroupBy() operator followed by ToDictionary() and Sum() projections.
+In the TransactionsController, this allows the system to aggregate all income
+and expense totals in a single pass over the dataset rather than iterating
+multiple times with sequential Where() clauses. Similarly, the BudgetsController
+groups all expense transactions by category before mapping them to the configured
+budget limits, ensuring O(1) lookup times when calculating the spent amounts for
+each budget category.
+
+────────────────────────────────────────────────────────────────────────────────
+19. INTEGRATION TEST DATABASE LIFECYCLE MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+A critical defect was identified in the test infrastructure where integration
+tests performing sequential read-after-write operations were failing. The root
+cause was traced to the EF Core InMemory provider configuration within the
+WebApplicationFactory. Generating a new Guid inside the UseInMemoryDatabase()
+options lambda caused a completely new, empty database to be instantiated for
+every HTTP request scope. This was remediated by generating a single Guid at the
+factory instantiation level, ensuring that all HTTP requests originating from the
+same test class execute against the same deterministic InMemory database instance.
+
+────────────────────────────────────────────────────────────────────────────────
+20. DATABASE MANAGEMENT INTERFACE
+────────────────────────────────────────────────────────────────────────────────
+
+To facilitate visual database inspection during the development and debugging
+phases, Adminer was integrated into the docker-compose orchestration. It runs
+on port 8081, providing a lightweight, containerized graphical interface to the
+PostgreSQL instance without polluting the host machine with thick client
+installations.
+
+================================================================================
+  END OF STEP 5 NOTES
+================================================================================
