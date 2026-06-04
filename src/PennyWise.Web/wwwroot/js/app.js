@@ -352,6 +352,14 @@ async function fetchBudgets() {
             const data = await res.json();
             renderBudgets(data);
             renderBudgetOverview(data.slice(0, 3));
+            
+            // Populate datalist for transaction category
+            const datalist = document.getElementById('budget-categories-list');
+            if (datalist) {
+                const categories = data.map(b => b.category);
+                const uniqueCategories = [...new Set(categories)];
+                datalist.innerHTML = uniqueCategories.map(c => `<option value="${c}"></option>`).join('');
+            }
         }
     } catch (e) {
         console.error('Failed to fetch budgets:', e);
