@@ -27,8 +27,8 @@ services:
       dockerfile: src/PennyWise.API/Dockerfile
     container_name: pennywise-api
     restart: unless-stopped
-    ports:
-      - "5000:8080"
+    expose:
+      - "8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=pennywise-db;Port=5432;Database=pennywisedb;Username=pennywise_admin;Password=Pw!S3cur3#2026"
@@ -59,7 +59,7 @@ services:
     container_name: pennywise-web
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - pennywise-api
     volumes:
