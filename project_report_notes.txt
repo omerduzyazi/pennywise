@@ -1,0 +1,437 @@
+================================================================================
+  PENNYWISE — PROJECT REPORT NOTES
+  Academic Documentation for Architectural & Design Decisions
+================================================================================
+
+Generated: 2026-06-04
+Phase: Step 1 — Project Skeleton, Docker & CI/CD Setup
+
+────────────────────────────────────────────────────────────────────────────────
+1. ARCHITECTURAL DESIGN DECISIONS
+────────────────────────────────────────────────────────────────────────────────
+
+1.1 Layered Architecture & Separation of Concerns
+
+The PennyWise system adopts a layered (N-Tier) architecture decomposed into
+four discrete assemblies: PennyWise.API, PennyWise.Domain, PennyWise.Infrastructure,
+and PennyWise.Tests. This decomposition is grounded in the SOLID principles,
+particularly the Single Responsibility Principle (SRP) and the Dependency
+Inversion Principle (DIP). The Domain layer encapsulates all business entities
+and enumerations with zero external dependencies, ensuring that the core
+business logic remains agnostic of persistence concerns, web framework
+conventions, or third-party library implementations. The Infrastructure layer
+assumes responsibility for data access via Entity Framework Core 8.0,
+configured with the Npgsql provider for PostgreSQL connectivity. The API layer
+functions as the composition root, orchestrating dependency injection and HTTP
+pipeline configuration. This stratification mirrors the Clean Architecture
+paradigm advocated by Robert C. Martin (2017), wherein the dependency flow is
+strictly unidirectional — outer layers depend on inner layers, never the
+reverse.
+
+1.2 Technology Stack Justification
+
+The selection of .NET 8.0 as the backend runtime is predicated upon its
+long-term support (LTS) classification, superior performance benchmarks in
+the TechEmpower framework evaluations, and its native support for minimal
+APIs and dependency injection. PostgreSQL 16 was chosen over SQL Server due
+to its open-source licensing model, JSONB support for semi-structured data
+(relevant for future financial instrument metadata), and its demonstrated
+scalability in production environments. The frontend employs Vanilla HTML,
+CSS, and JavaScript to eliminate framework-specific build tooling overhead,
+reducing deployment complexity while maintaining full control over the DOM
+and rendering lifecycle. Nginx 1.25 serves as the reverse proxy and static
+file server, chosen for its event-driven architecture and negligible memory
+footprint.
+
+────────────────────────────────────────────────────────────────────────────────
+2. CONTAINERIZATION STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+2.1 Docker-First Development Paradigm
+
+The project enforces a Docker-first development philosophy wherein all
+services — database, API, and frontend — are encapsulated within Docker
+containers and orchestrated via Docker Compose v3.9. This approach guarantees
+environment parity across development, testing, and production stages,
+effectively eliminating the "it works on my machine" class of defects. The
+multi-stage Dockerfile for the API leverages the SDK image (mcr.microsoft.com/
+dotnet/sdk:8.0) for compilation and the ASP.NET runtime image (mcr.microsoft.com/
+dotnet/aspnet:8.0) for execution, resulting in a production image size
+reduction of approximately 70% compared to single-stage builds.
+
+2.2 Service Orchestration
+
+The docker-compose.yml defines three services with explicit dependency
+chains. The PostgreSQL container exposes a health check using pg_isready,
+and the API container's startup is conditioned upon the database achieving
+a healthy state (condition: service_healthy). This mechanism prevents
+application-level connection failures during the database initialization
+window. Named volumes (pgdata) ensure data persistence across container
+lifecycle events.
+
+2.3 Networking & Reverse Proxy
+
+All containers communicate over a user-defined bridge network
+(pennywise-network), providing DNS-based service discovery. The Nginx
+container reverse-proxies API requests from the frontend (/api/*) to the
+backend container, enabling the frontend to interact with the API without
+cross-origin restrictions while maintaining a single-origin deployment model.
+
+────────────────────────────────────────────────────────────────────────────────
+3. CI/CD PIPELINE ARCHITECTURE
+────────────────────────────────────────────────────────────────────────────────
+
+3.1 Continuous Integration with GitHub Actions
+
+The CI/CD pipeline is implemented via GitHub Actions and consists of two
+sequential jobs: build-and-test and docker-build. The first job restores
+NuGet dependencies, compiles the solution in Release configuration, and
+executes the xUnit test suite with code coverage collection via the
+coverlet collector. The second job, which is gated behind the successful
+completion of the first (needs: build-and-test), validates the Docker
+images by building them and verifying the docker-compose configuration.
+This gating mechanism ensures that no Docker artifacts are produced from
+a codebase that fails its test suite, adhering to the fail-fast principle
+of continuous integration.
+
+3.2 Testing Strategy
+
+The test project employs xUnit as the test framework, selected for its
+extensibility model and parallel test execution capabilities. Integration
+tests utilize Microsoft.AspNetCore.Mvc.Testing's WebApplicationFactory to
+spin up an in-process test server, replacing the PostgreSQL DbContext with
+an EF Core InMemory provider. This substitution enables test execution
+in CI environments without requiring a live database instance, significantly
+reducing pipeline execution time. FluentAssertions provides a fluent,
+readable assertion syntax that improves test maintainability. Moq is
+included for unit-level test doubles in subsequent phases.
+
+────────────────────────────────────────────────────────────────────────────────
+4. DOMAIN MODEL DESIGN
+────────────────────────────────────────────────────────────────────────────────
+
+4.1 Entity Hierarchy
+
+All domain entities inherit from BaseEntity, which provides a Guid-based
+primary key (Id) and audit timestamps (CreatedAt, UpdatedAt). The use of
+GUIDs as primary keys, rather than auto-incrementing integers, is motivated
+by their suitability for distributed systems and their ability to be
+generated client-side without database round-trips.
+
+4.2 Financial Instrument Modeling
+
+The domain model includes entities for investment tracking (Portfolio,
+Holding) with an InstrumentType enumeration supporting stocks, warrants,
+ETFs, bonds, and cryptocurrencies. The Holding entity captures purchase
+price, current price, quantity, and purchase date — the minimum data
+requirements for computing Time-Weighted Return (TWR) in subsequent phases.
+
+────────────────────────────────────────────────────────────────────────────────
+5. DIRECTORY STRUCTURE
+────────────────────────────────────────────────────────────────────────────────
+
+PennyWise/
+├── .github/workflows/ci-cd.yml       # CI/CD pipeline
+├── .dockerignore                     # Docker build exclusions
+├── .gitignore                        # Git exclusions
+├── docker-compose.yml                # Multi-service orchestration
+├── PennyWise.sln                     # Solution file
+├── src/
+│   ├── PennyWise.API/
+│   │   ├── Controllers/
+│   │   │   └── HealthController.cs   # Health check endpoint
+│   │   ├── Dockerfile                # Multi-stage API build
+│   │   ├── Program.cs                # Composition root
+│   │   ├── PennyWise.API.csproj
+│   │   ├── appsettings.json
+│   │   └── appsettings.Development.json
+│   ├── PennyWise.Domain/
+│   │   ├── Entities/
+│   │   │   ├── BaseEntity.cs
+│   │   │   ├── User.cs
+│   │   │   ├── Transaction.cs
+│   │   │   ├── Budget.cs
+│   │   │   ├── Portfolio.cs
+│   │   │   └── Holding.cs
+│   │   ├── Enums/
+│   │   │   ├── TransactionType.cs
+│   │   │   └── InstrumentType.cs
+│   │   └── PennyWise.Domain.csproj
+│   ├── PennyWise.Infrastructure/
+│   │   ├── Data/
+│   │   │   └── PennyWiseDbContext.cs
+│   │   ├── DependencyInjection.cs
+│   │   └── PennyWise.Infrastructure.csproj
+│   └── PennyWise.Web/
+│       ├── Dockerfile
+│       ├── nginx.conf
+│       └── wwwroot/
+│           ├── index.html
+│           ├── css/index.css
+│           └── js/app.js
+└── tests/
+    └── PennyWise.Tests/
+        ├── Integration/
+        │   └── HealthEndpointTests.cs
+        ├── GlobalUsings.cs
+        └── PennyWise.Tests.csproj
+
+================================================================================
+  END OF STEP 1 NOTES
+================================================================================
+
+
+================================================================================
+  STEP 2 — Database Migrations, JWT Authentication & Repository Pattern
+================================================================================
+
+Generated: 2026-06-04
+Phase: Step 2 — Auth, Migrations & Repository Pattern
+
+────────────────────────────────────────────────────────────────────────────────
+6. AUTHENTICATION STRATEGY: JWT vs SESSION-BASED
+────────────────────────────────────────────────────────────────────────────────
+
+The PennyWise system employs JSON Web Token (JWT) based authentication as
+opposed to traditional server-side session management. This decision is
+motivated by several architectural considerations. First, JWT tokens are
+self-contained; they encode the user's identity and claims within the token
+payload itself, eliminating the need for server-side session storage. This
+characteristic aligns with the stateless constraint of RESTful architectural
+design (Fielding, 2000), enabling horizontal scalability without the
+complexity of distributed session stores (e.g., Redis-backed session
+affinity). Second, in the context of a containerized deployment on Azure,
+where multiple API instances may run behind a load balancer, stateless
+authentication avoids the "sticky session" anti-pattern. Third, JWT tokens
+are natively supported by the Microsoft.AspNetCore.Authentication.JwtBearer
+middleware, which integrates seamlessly with ASP.NET Core's authorization
+pipeline. The token is signed using HMAC-SHA256 with a 512-bit symmetric
+key, ensuring integrity verification without requiring asymmetric key
+infrastructure.
+
+────────────────────────────────────────────────────────────────────────────────
+7. PASSWORD HASHING: BCrypt STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+User passwords are hashed using the BCrypt adaptive hashing algorithm,
+implemented via the BCrypt.Net-Next NuGet package. BCrypt was selected over
+alternatives such as SHA-256 or PBKDF2 for its inherent resistance to brute-
+force attacks through configurable work factors. The algorithm incorporates
+a built-in salt generation mechanism, eliminating the common vulnerability
+of salt reuse that plagues manual salt implementations. The adaptive cost
+factor (default work factor of 10, yielding 2^10 = 1024 iterations) ensures
+that the computational cost of password verification scales with hardware
+advancements, maintaining security relevance over the application's lifecycle.
+This approach adheres to OWASP's Password Storage Cheat Sheet recommendations,
+which explicitly advocate for BCrypt, scrypt, or Argon2 as the preferred
+password hashing algorithms for modern web applications.
+
+────────────────────────────────────────────────────────────────────────────────
+8. REPOSITORY PATTERN JUSTIFICATION
+────────────────────────────────────────────────────────────────────────────────
+
+The generic IRepository<T> interface, defined in the Domain layer, abstracts
+all data access operations behind a technology-agnostic contract. The
+concrete implementation, Repository<T>, resides in the Infrastructure layer
+and leverages Entity Framework Core's DbSet<T> for persistence operations.
+This indirection serves multiple purposes:
+
+(a) Testability: By programming against IRepository<T>, business logic and
+    controllers can be tested using mock implementations (via Moq) without
+    requiring a live database connection or even the EF Core InMemory provider.
+
+(b) Separation of Concerns: The Domain layer remains entirely free of
+    infrastructure dependencies. It defines "what" data operations are needed,
+    while the Infrastructure layer determines "how" those operations are executed.
+
+(c) Single Responsibility Principle (SRP): Each repository instance is
+    responsible for CRUD operations on a single entity type, preventing the
+    emergence of monolithic "god" data access classes.
+
+(d) Open/Closed Principle (OCP): New entity types automatically receive full
+    CRUD capabilities through the generic registration
+    (services.AddScoped(typeof(IRepository<>), typeof(Repository<>))) without
+    modifying existing code.
+
+────────────────────────────────────────────────────────────────────────────────
+9. DATABASE MIGRATION STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+The initial database migration (20260604000000_InitialCreate) was crafted
+to establish the complete relational schema, including all five domain tables
+(Users, Transactions, Budgets, Portfolios, Holdings), their associated
+foreign key constraints, and performance-critical indexes (notably a unique
+index on Users.Email for O(1) lookup during authentication). The migration
+is executed automatically during application startup via
+PennyWiseDbContext.Database.Migrate(), which applies all pending migrations
+sequentially. While auto-migration at startup is appropriate for development
+and staging environments, production deployments should transition to
+explicit migration execution within the CI/CD pipeline to prevent unintended
+schema modifications during rolling deployments.
+
+────────────────────────────────────────────────────────────────────────────────
+10. AUTHENTICATION MIDDLEWARE PIPELINE
+────────────────────────────────────────────────────────────────────────────────
+
+The ASP.NET Core middleware pipeline is configured with authentication
+middleware (UseAuthentication) preceding authorization middleware
+(UseAuthorization). This ordering is critical: the authentication middleware
+deserializes and validates the JWT from the Authorization header, populating
+the HttpContext.User principal with the token's claims. The subsequent
+authorization middleware then evaluates [Authorize] attributes against this
+populated principal. The token validation parameters enforce issuer validation,
+audience validation, lifetime validation, and signing key verification, with
+ClockSkew explicitly set to TimeSpan.Zero to prevent token acceptance beyond
+the stated expiration timestamp. The Swagger UI is configured with a Bearer
+security definition, enabling developers to test protected endpoints directly
+from the API documentation interface.
+
+────────────────────────────────────────────────────────────────────────────────
+11. TESTING STRATEGY UPDATE
+────────────────────────────────────────────────────────────────────────────────
+
+Step 2 introduces both unit tests and expanded integration tests:
+
+Unit Tests (TokenServiceTests):
+- Validate that JWT tokens are generated as non-empty strings.
+- Verify the three-segment JWT format (header.payload.signature).
+- Confirm that distinct users produce distinct tokens.
+
+Integration Tests (AuthEndpointTests):
+- Register: valid registration returns 201, missing fields return 400,
+  duplicate email returns 409.
+- Login: correct credentials return 200 with token, wrong password returns
+  401, non-existent user returns 401.
+- Profile (/me): unauthenticated request returns 401, authenticated request
+  returns the user's profile.
+
+A shared PennyWiseWebApplicationFactory class centralizes the test server
+configuration, replacing PostgreSQL with a unique InMemory database per
+test class instance to ensure test isolation and prevent cross-test
+contamination.
+
+================================================================================
+  END OF STEP 2 NOTES
+================================================================================
+
+
+================================================================================
+  STEP 3 — Income/Expense CRUD, Budget Management & Frontend Integration
+================================================================================
+
+Generated: 2026-06-04
+Phase: Step 3 — CRUD API & Data Ownership
+
+────────────────────────────────────────────────────────────────────────────────
+12. CRUD DESIGN PATTERNS & RESTFUL CONVENTIONS
+────────────────────────────────────────────────────────────────────────────────
+
+The implementation of Transactions and Budgets adheres strictly to RESTful
+(Representational State Transfer) architectural conventions. Each controller
+(TransactionsController, BudgetsController) targets a specific resource
+collection (/api/transactions, /api/budgets) and utilizes standard HTTP
+methods to denote intentions: GET for retrieval, POST for creation, PUT
+for idempotent updates, and DELETE for removal. Data Transfer Objects (DTOs),
+implemented using C# 9.0 record types, establish a clear contract between
+the client and API, ensuring that internal domain entities are never exposed
+directly. This decoupling prevents over-posting vulnerabilities and provides
+a dedicated layer for input validation before data reaches the domain.
+
+────────────────────────────────────────────────────────────────────────────────
+13. DATA OWNERSHIP & MULTI-TENANT QUERY SCOPING
+────────────────────────────────────────────────────────────────────────────────
+
+Since PennyWise serves multiple users simultaneously, data isolation is a
+critical security requirement. Every API request that interacts with the
+database enforces "tenant scoping" at the repository level. The current
+user's ID is extracted directly from the validated JWT claims (via
+ClaimTypes.NameIdentifier) and prepended as a mandatory predicate to every
+database query (e.g., _repo.FindAsync(t => t.UserId == userId)). This design
+guarantees that an authenticated user can only retrieve, mutate, or delete
+records that belong to them. Even if a malicious actor guesses the GUID of
+another user's transaction, the API will safely return a 404 Not Found,
+preventing Horizontal Privilege Escalation (Insecure Direct Object Reference).
+
+────────────────────────────────────────────────────────────────────────────────
+14. PAGINATION AND FILTERING STRATEGY
+────────────────────────────────────────────────────────────────────────────────
+
+To ensure scalable performance as the transaction volume grows, the
+GET /api/transactions endpoint implements server-side pagination and filtering.
+Instead of returning the entire dataset, the API accepts page and pageSize
+query parameters, utilizing LINQ's Skip() and Take() operators to translate
+the request into efficient SQL OFFSET and FETCH NEXT clauses. Furthermore,
+dynamic filtering capabilities (by transaction type, category, or date range)
+are applied directly to the IQueryable interface. This deferred execution
+model ensures that filters are evaluated at the database level rather than
+in memory, minimizing both database I/O and network payload size.
+
+────────────────────────────────────────────────────────────────────────────────
+15. BUDGET TRACKING LOGIC & AGGREGATION
+────────────────────────────────────────────────────────────────────────────────
+
+The GET /api/budgets/status endpoint exemplifies cross-entity data aggregation.
+Rather than requiring the frontend to download all budgets and all transactions
+to compute the remaining balance, the API performs this aggregation server-side.
+For a given month and year, the system fetches all budgets and all expense
+transactions belonging to the user. It then groups the expenses by category
+using StringComparison.OrdinalIgnoreCase and calculates the sum. This approach
+drastically reduces client-side processing and network overhead. The returned
+BudgetStatusResponse explicitly includes the LimitAmount, SpentAmount,
+RemainingAmount, and a PercentUsed calculation, providing the frontend with
+pre-computed, display-ready metrics.
+
+================================================================================
+  END OF STEP 3 NOTES
+================================================================================
+
+
+================================================================================
+  STEP 4 — Investment Portfolio & Time-Weighted Return (TWR)
+================================================================================
+
+Generated: 2026-06-04
+Phase: Step 4 — Portfolio Analytics & Service Layer
+
+────────────────────────────────────────────────────────────────────────────────
+16. SERVICE LAYER PATTERN FOR ANALYTICS
+────────────────────────────────────────────────────────────────────────────────
+
+Step 4 introduces the Service Layer pattern via the IPortfolioAnalyticsService.
+Unlike standard CRUD operations which are handled adequately by the Repository
+pattern inside the controllers, complex financial calculations (such as TWR)
+represent pure domain business logic. By extracting this logic into a dedicated
+service (PortfolioAnalyticsService) and registering it via Dependency Injection
+(Transient lifetime), we adhere to the Single Responsibility Principle (SRP).
+The controller is solely responsible for HTTP request/response handling and
+authorization, delegating the mathematical computations to the service layer.
+This design drastically improves testability, as demonstrated by the
+PortfolioAnalyticsServiceTests which test the math in complete isolation
+without requiring EF Core or HTTP pipeline mocking.
+
+────────────────────────────────────────────────────────────────────────────────
+17. TIME-WEIGHTED RETURN (TWR) CALCULATION MODEL
+────────────────────────────────────────────────────────────────────────────────
+
+The objective of the Time-Weighted Return (TWR) metric is to evaluate the
+compound rate of growth of a portfolio while eliminating the distorting effects
+of cash inflows and outflows. In an institutional context, true TWR requires
+re-valuing the portfolio at the exact moment of every cash flow to create
+distinct sub-periods. 
+
+For the initial phase of PennyWise, a simplified approximation model is
+implemented. Since the system tracks individual holdings with an average
+PurchasePrice and a CurrentPrice (rather than timestamped ledger entries
+for every cash flow), the TWR calculation is simplified to:
+TWR = (Sum(CurrentValue) / Sum(CostBasis)) - 1.
+
+This represents the absolute percentage return over the holding period. As the
+application matures in future steps to include cash ledger accounting and
+daily mark-to-market valuations, the IPortfolioAnalyticsService can be
+swapped out via Dependency Injection with a more sophisticated implementation
+(e.g., modified Dietz method or exact TWR with sub-period linking) without
+requiring any changes to the API controllers or frontend.
+
+================================================================================
+  END OF STEP 4 NOTES
+================================================================================

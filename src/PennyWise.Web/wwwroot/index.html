@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PennyWise — Personal Finance & Budget Tracking System. Track expenses, manage budgets, and monitor your investment portfolio.">
+    <title>PennyWise — Personal Finance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+    <!-- ── Auth Modal Overlay ──────────────────────────────────── -->
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-modal" id="auth-modal">
+            <div class="auth-brand">
+                <svg width="40" height="40" viewBox="0 0 28 28" fill="none" style="color: var(--color-accent-primary)">
+                    <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="2"/>
+                    <text x="14" y="19" text-anchor="middle" fill="currentColor" font-size="16" font-family="monospace" font-weight="700">₺</text>
+                </svg>
+                <h2>SYS.LOGIN</h2>
+            </div>
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="login-form">
+                <h3>Welcome back</h3>
+                <p class="auth-subtitle">Sign in to your account</p>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <div class="auth-error" id="login-error"></div>
+                <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+                <p class="auth-switch">Don't have an account? <a href="#" id="show-register">Sign up</a></p>
+            </form>
+
+            <!-- Register Form -->
+            <form class="auth-form" id="register-form">
+                <h3>Create account</h3>
+                <p class="auth-subtitle">Start tracking your finances</p>
+                <div class="form-group">
+                    <label for="register-fullname">Full Name</label>
+                    <input type="text" id="register-fullname" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Min 6 characters" required minlength="6">
+                </div>
+                <div class="auth-error" id="register-error"></div>
+                <button type="submit" class="btn-primary" id="register-btn">Create Account</button>
+                <p class="auth-switch">Already have an account? <a href="#" id="show-login">Sign in</a></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Sidebar Navigation ──────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="2"/>
+                    <text x="14" y="19" text-anchor="middle" fill="currentColor" font-size="16" font-family="monospace" font-weight="700">₺</text>
+                </svg>
+            </div>
+            <span class="brand-name">PennyWise</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-page="transactions" id="nav-transactions">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+                <span>Transactions</span>
+            </a>
+            <a href="#" class="nav-item" data-page="budgets" id="nav-budgets">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                <span>Budgets</span>
+            </a>
+            <a href="#" class="nav-item" data-page="portfolio" id="nav-portfolio">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>
+                <span>Portfolio</span>
+            </a>
+            <a href="#" class="nav-item" data-page="admin" id="nav-admin" style="display: none; border-color: var(--color-danger); color: var(--color-danger);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Admin Panel</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="api-status" id="api-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking API...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ── Main Content ────────────────────────────────────────── -->
+    <main class="main-content" id="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <h1 class="page-title" id="page-title">Dashboard</h1>
+            <div class="topbar-actions" style="display: flex; align-items: center; gap: 16px;">
+                <div class="header-balance" style="background: rgba(99,102,241,0.1); padding: 6px 12px; border-radius: 20px; font-weight: 600; color: var(--color-accent-primary); display: none;" id="header-balance-container">
+                    Balance: <span id="header-balance-val">₺0.00</span>
+                </div>
+                <span class="greeting" id="greeting"></span>
+                <button class="btn-logout" id="btn-logout" title="Sign out">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <section class="page active" id="page-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card stat-income">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/><polyline points="17,6 23,6 23,12"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Income</span>
+                        <span class="stat-value" id="stat-income">₺0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-expense">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,18 13.5,8.5 8.5,13.5 1,6"/><polyline points="17,18 23,18 23,12"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Expenses</span>
+                        <span class="stat-value" id="stat-expense">₺0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-balance">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Net Balance</span>
+                        <span class="stat-value" id="stat-balance">₺0.00</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-portfolio">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Portfolio Value</span>
+                        <span class="stat-value" id="stat-portfolio">₺0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card recent-transactions">
+                    <div class="card-header">
+                        <h2>Recent Transactions</h2>
+                    </div>
+                    <div class="card-body" id="recent-transactions-list">
+                        <p class="empty-state">No transactions yet. Add your first one!</p>
+                    </div>
+                </div>
+                <div class="card budget-overview">
+                    <div class="card-header">
+                        <h2>Budget Overview</h2>
+                    </div>
+                    <div class="card-body" id="budget-overview-list">
+                        <p class="empty-state">No budgets configured.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transactions Page -->
+        <section class="page" id="page-transactions">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Transactions</h2>
+                    <button class="btn-primary btn-sm" id="btn-add-transaction">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Transaction
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="data-table" id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-list">
+                                <tr><td colspan="6" class="empty-state">Loading transactions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Budgets Page -->
+        <section class="page" id="page-budgets">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Budgets</h2>
+                    <button class="btn-primary btn-sm" id="btn-add-budget">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Add Budget
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="budgets-grid" id="budgets-list">
+                        <p class="empty-state">Loading budgets...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Portfolio Page -->
+        <section class="page" id="page-portfolio">
+            <div class="dashboard-grid" style="grid-template-columns: 1fr 2fr;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>My Portfolios</h2>
+                        <button class="btn-primary btn-sm" id="btn-add-portfolio">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="portfolios-list" style="display: flex; flex-direction: column; gap: 12px;">
+                            <p class="empty-state">Loading portfolios...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" id="portfolio-details" style="display: none;">
+                    <div class="card-header">
+                        <h2 id="pf-detail-title">Portfolio Details</h2>
+                        <button class="btn-primary btn-sm" id="btn-add-holding">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Holding
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+                            <div class="stat-card" style="padding: 16px;">
+                                <div class="stat-info">
+                                    <span class="stat-label">Total Value</span>
+                                    <span class="stat-value" id="pf-detail-value" style="font-size: 1.25rem;">₺0.00</span>
+                                </div>
+                            </div>
+                            <div class="stat-card" style="padding: 16px;">
+                                <div class="stat-info">
+                                    <span class="stat-label">Absolute Return</span>
+                                    <span class="stat-value" id="pf-detail-abs" style="font-size: 1.25rem;">₺0.00</span>
+                                </div>
+                            </div>
+                            <div class="stat-card" style="padding: 16px;">
+                                <div class="stat-info">
+                                    <span class="stat-label">TWR</span>
+                                    <span class="stat-value" id="pf-detail-twr" style="font-size: 1.25rem;">0.00%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="holdings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Name</th>
+                                        <th>Qty</th>
+                                        <th>Buy Price</th>
+                                        <th>Current Price</th>
+                                        <th>Total Val</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="holdings-list">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Admin Page -->
+        <section class="page" id="page-admin">
+            <div class="card">
+                <div class="card-header">
+                    <h2>SYSTEM USERS (ADMIN)</h2>
+                    <button class="btn-sm" onclick="fetchAdminUsers()">Refresh</button>
+                </div>
+                <div class="card-body table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-list">
+                            <!-- Users will be listed here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ── Modals ──────────────────────────────────────────────── -->
+    <!-- Transaction Modal -->
+    <div class="auth-overlay hidden" id="transaction-modal-overlay">
+        <div class="auth-modal">
+            <div class="modal-header">
+                <h3>Add Transaction</h3>
+                <button class="close-modal" id="close-transaction-modal">&times;</button>
+            </div>
+            <form id="transaction-form" class="auth-form active">
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="tx-type" required>
+                        <option value="0">Income</option>
+                        <option value="1">Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="tx-amount" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="tx-category" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="tx-description">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="tx-date" required>
+                </div>
+                <div class="auth-error" id="tx-error"></div>
+                <button type="submit" class="btn-primary" id="tx-submit-btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div class="auth-overlay hidden" id="budget-modal-overlay">
+        <div class="auth-modal">
+            <div class="modal-header">
+                <h3>Add Budget</h3>
+                <button class="close-modal" id="close-budget-modal">&times;</button>
+            </div>
+            <form id="budget-form" class="auth-form active">
+                <div class="form-group">
+                    <label>Category</label>
+                    <input type="text" id="bg-category" required>
+                </div>
+                <div class="form-group">
+                    <label>Monthly Limit Amount</label>
+                    <input type="number" id="bg-amount" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-group row-group">
+                    <div class="col">
+                        <label>Month</label>
+                        <input type="number" id="bg-month" min="1" max="12" required>
+                    </div>
+                    <div class="col">
+                        <label>Year</label>
+                        <input type="number" id="bg-year" min="2000" max="2100" required>
+                    </div>
+                </div>
+                <div class="auth-error" id="bg-error"></div>
+                <button type="submit" class="btn-primary" id="bg-submit-btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Portfolio Modal -->
+    <div class="auth-overlay hidden" id="portfolio-modal-overlay">
+        <div class="auth-modal">
+            <div class="modal-header">
+                <h3>New Portfolio</h3>
+                <button class="close-modal" id="close-portfolio-modal">&times;</button>
+            </div>
+            <form id="portfolio-form" class="auth-form active">
+                <div class="form-group">
+                    <label>Portfolio Name</label>
+                    <input type="text" id="pf-name" required>
+                </div>
+                <div class="auth-error" id="pf-error"></div>
+                <button type="submit" class="btn-primary" id="pf-submit-btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Holding Modal -->
+    <div class="auth-overlay hidden" id="holding-modal-overlay">
+        <div class="auth-modal">
+            <div class="modal-header">
+                <h3>Add Holding</h3>
+                <button class="close-modal" id="close-holding-modal">&times;</button>
+            </div>
+            <form id="holding-form" class="auth-form active">
+                <div class="form-group row-group">
+                    <div class="col">
+                        <label>Symbol</label>
+                        <input type="text" id="h-symbol" placeholder="AAPL" required>
+                    </div>
+                    <div class="col">
+                        <label>Type</label>
+                        <select id="h-type">
+                            <option value="0">Stock</option>
+                            <option value="1">Crypto</option>
+                            <option value="2">Bond</option>
+                            <option value="3">ETF</option>
+                            <option value="4">Commodity</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="h-name" placeholder="Apple Inc." required>
+                </div>
+                <div class="form-group row-group">
+                    <div class="col">
+                        <label>Buy Price (₺)</label>
+                        <input type="number" id="h-price" step="0.01" min="0" required>
+                    </div>
+                    <div class="col">
+                        <label>Quantity</label>
+                        <input type="number" id="h-qty" step="0.0001" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Purchase Date</label>
+                    <input type="date" id="h-date" required>
+                </div>
+                <div class="auth-error" id="h-error"></div>
+                <button type="submit" class="btn-primary" id="h-submit-btn">Save</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,64 @@
+services:
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  pennywise-db:
+    image: postgres:16-alpine
+    container_name: pennywise-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pennywise_admin
+      POSTGRES_PASSWORD: Pw!S3cur3#2026
+      POSTGRES_DB: pennywisedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pennywise_admin -d pennywisedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pennywise-network
+
+  # ── .NET Core Web API ────────────────────────────────────────────
+  pennywise-api:
+    build:
+      context: .
+      dockerfile: src/PennyWise.API/Dockerfile
+    container_name: pennywise-api
+    restart: unless-stopped
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=pennywise-db;Port=5432;Database=pennywisedb;Username=pennywise_admin;Password=Pw!S3cur3#2026"
+      JwtSettings__Secret: "PennyW1se-Sup3r-S3cur3-K3y-2026-Th1s-Must-Be-At-Least-32-Chars!"
+    depends_on:
+      pennywise-db:
+        condition: service_healthy
+    networks:
+      - pennywise-network
+
+  # ── Frontend (Nginx) ────────────────────────────────────────────
+  pennywise-web:
+    build:
+      context: ./src/PennyWise.Web
+      dockerfile: Dockerfile
+    container_name: pennywise-web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - pennywise-api
+    volumes:
+      - ./src/PennyWise.Web/wwwroot:/usr/share/nginx/html
+    networks:
+      - pennywise-network
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  pennywise-network:
+    driver: bridge

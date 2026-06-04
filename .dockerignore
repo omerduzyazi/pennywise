@@ -1,0 +1,11 @@
+**/.git
+**/.gitignore
+**/.vs
+**/bin
+**/obj
+**/node_modules
+**/coverage
+**/*.md
+**/docker-compose*
+**/.github
+
