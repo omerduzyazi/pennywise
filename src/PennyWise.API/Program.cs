@@ -105,6 +105,125 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PennyWiseDbContext>();
     db.Database.Migrate();
+
+    // ── Seed Sample Data (Turkish) ─────────────────────────────────
+    if (!db.Users.Any())
+    {
+        var adminId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        
+        // Add Admin
+        db.Users.Add(new PennyWise.Domain.Entities.User
+        {
+            Id = adminId,
+            Email = "admin@pennywise.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
+            FullName = "Sistem Yöneticisi",
+            Role = "Admin",
+            CreatedAt = DateTime.UtcNow
+        });
+        
+        // Add Normal User
+        db.Users.Add(new PennyWise.Domain.Entities.User
+        {
+            Id = userId,
+            Email = "demo@pennywise.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Demo123!"),
+            FullName = "Demo Kullanıcı",
+            Role = "User",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Add Demo Portfolios
+        var portfolioId = Guid.NewGuid();
+        db.Portfolios.Add(new PennyWise.Domain.Entities.Portfolio
+        {
+            Id = portfolioId,
+            UserId = userId,
+            Name = "Teknoloji Fonum",
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Add Holdings
+        db.Holdings.Add(new PennyWise.Domain.Entities.Holding
+        {
+            Id = Guid.NewGuid(),
+            PortfolioId = portfolioId,
+            TickerSymbol = "AAPL",
+            InstrumentName = "Apple Inc.",
+            InstrumentType = PennyWise.Domain.Enums.InstrumentType.Stock,
+            PurchasePrice = 150.0m,
+            Quantity = 10m,
+            CurrentPrice = 185.5m,
+            PurchaseDate = DateTime.UtcNow.AddMonths(-6),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        db.Holdings.Add(new PennyWise.Domain.Entities.Holding
+        {
+            Id = Guid.NewGuid(),
+            PortfolioId = portfolioId,
+            TickerSymbol = "BTC",
+            InstrumentName = "Bitcoin",
+            InstrumentType = PennyWise.Domain.Enums.InstrumentType.Crypto,
+            PurchasePrice = 45000m,
+            Quantity = 0.5m,
+            CurrentPrice = 65000m,
+            PurchaseDate = DateTime.UtcNow.AddMonths(-3),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Add Transactions
+        db.Transactions.Add(new PennyWise.Domain.Entities.Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Type = PennyWise.Domain.Enums.TransactionType.Income,
+            Amount = 45000m,
+            Category = "Maaş",
+            Description = "Aylık Maaş Ödemesi",
+            TransactionDate = DateTime.UtcNow.AddDays(-2),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        db.Transactions.Add(new PennyWise.Domain.Entities.Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Type = PennyWise.Domain.Enums.TransactionType.Expense,
+            Amount = 15000m,
+            Category = "Kira",
+            Description = "Ev Kirası",
+            TransactionDate = DateTime.UtcNow.AddDays(-1),
+            CreatedAt = DateTime.UtcNow
+        });
+
+        db.Transactions.Add(new PennyWise.Domain.Entities.Transaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Type = PennyWise.Domain.Enums.TransactionType.Expense,
+            Amount = 3500m,
+            Category = "Market",
+            Description = "Haftalık Alışveriş",
+            TransactionDate = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        // Add Budgets
+        db.Budgets.Add(new PennyWise.Domain.Entities.Budget
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Category = "Market",
+            LimitAmount = 10000m,
+            Month = DateTime.UtcNow.Month,
+            Year = DateTime.UtcNow.Year,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        db.SaveChanges();
+    }
 }
 
 app.Run();

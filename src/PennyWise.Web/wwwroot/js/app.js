@@ -58,8 +58,8 @@ function updateUIForAuth() {
         hideAuthModal();
         const user = getUser();
         if (user) {
-            document.getElementById('greeting').textContent = `SYS.USR: ${user.fullName}`;
-            
+            document.getElementById('greeting').textContent = `Kullanıcı: ${user.fullName}`;
+
             // Show Admin Panel if role is Admin
             if (user.role === 'Admin') {
                 document.getElementById('nav-admin').style.display = 'flex';
@@ -111,12 +111,12 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const password = document.getElementById('login-password').value;
 
     if (!email || !password) {
-        errorEl.textContent = 'Please fill in all fields.';
+        errorEl.textContent = 'Lütfen tüm alanları doldurun.';
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'Signing in...';
+    btn.textContent = 'Giriş yapılıyor...';
 
     try {
         const res = await fetch(`${API_BASE}/auth/login`, {
@@ -131,13 +131,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             updateUIForAuth();
         } else {
             const err = await res.json();
-            errorEl.textContent = err.error || 'Invalid credentials.';
+            errorEl.textContent = err.error || 'Geçersiz bilgiler.';
         }
     } catch {
-        errorEl.textContent = 'Cannot connect to the server.';
+        errorEl.textContent = 'Sunucuya bağlanılamadı.';
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.textContent = 'Giriş Yap';
     }
 });
 
@@ -153,17 +153,17 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     const password = document.getElementById('register-password').value;
 
     if (!fullName || !email || !password) {
-        errorEl.textContent = 'Please fill in all fields.';
+        errorEl.textContent = 'Lütfen tüm alanları doldurun.';
         return;
     }
 
     if (password.length < 6) {
-        errorEl.textContent = 'Password must be at least 6 characters.';
+        errorEl.textContent = 'Parola en az 6 karakter olmalıdır.';
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'Creating account...';
+    btn.textContent = 'Hesap oluşturuluyor...';
 
     try {
         const res = await fetch(`${API_BASE}/auth/register`, {
@@ -178,13 +178,13 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
             updateUIForAuth();
         } else {
             const err = await res.json();
-            errorEl.textContent = err.error || 'Registration failed.';
+            errorEl.textContent = err.error || 'Kayıt başarısız oldu.';
         }
     } catch {
-        errorEl.textContent = 'Cannot connect to the server.';
+        errorEl.textContent = 'Sunucuya bağlanılamadı.';
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Create Account';
+        btn.textContent = 'Kayıt Ol';
     }
 });
 
@@ -198,7 +198,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 // Navigation
 // ═══════════════════════════════════════════════════════════════
 
-document.querySelectorAll('.nav-item').forEach(item => {
+document.querySelectorAll('.dock-item').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         navigateTo(item.dataset.page);
@@ -206,7 +206,7 @@ document.querySelectorAll('.nav-item').forEach(item => {
 });
 
 function navigateTo(pageName) {
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.dock-item').forEach(n => n.classList.remove('active'));
     const activeNav = document.querySelector(`[data-page="${pageName}"]`);
     if (activeNav) activeNav.classList.add('active');
 
@@ -214,18 +214,17 @@ function navigateTo(pageName) {
     const activePage = document.getElementById(`page-${pageName}`);
     if (activePage) activePage.classList.add('active');
 
-    const title = pageName.charAt(0).toUpperCase() + pageName.slice(1);
-    document.getElementById('page-title').textContent = title === 'Admin' ? 'SYSTEM.ADMIN_PANEL' : title;
+    const titles = {
+        'dashboard': 'Özet Ekranı',
+        'transactions': 'İşlemler',
+        'budgets': 'Bütçeler',
+        'portfolio': 'Portföylerim',
+        'admin': 'Kullanıcı Yönetimi'
+    };
+    document.getElementById('page-title').textContent = titles[pageName] || 'PennyWise';
 
     if (pageName === 'admin') fetchAdminUsers();
-
-    document.getElementById('sidebar').classList.remove('open');
 }
-
-// Mobile menu
-document.getElementById('menu-toggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('open');
-});
 
 // ═══════════════════════════════════════════════════════════════
 // API Health Check
@@ -239,15 +238,15 @@ async function checkApiHealth() {
         const res = await fetch(`${API_BASE}/health`);
         if (res.ok) {
             const data = await res.json();
-            dot.className = 'status-dot online';
-            text.textContent = `API ${data.status} — v${data.version}`;
+            if (dot) dot.className = 'status-dot online';
+            if (text) text.textContent = `API ${data.status} — v${data.version}`;
         } else {
-            dot.className = 'status-dot offline';
-            text.textContent = 'API Unreachable';
+            if (dot) dot.className = 'status-dot offline';
+            if (text) text.textContent = 'API Ulaşılamıyor';
         }
     } catch {
-        dot.className = 'status-dot offline';
-        text.textContent = 'API Offline';
+        if (dot) dot.className = 'status-dot offline';
+        if (text) text.textContent = 'API Çevrimdışı';
     }
 }
 
@@ -272,18 +271,18 @@ async function fetchTransactions() {
 function renderTransactions(transactions) {
     const tbody = document.getElementById('transactions-list');
     if (!transactions || transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transactions found. Add one!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Henüz işlem yok. Yeni bir tane ekleyin!</td></tr>';
         return;
     }
 
     tbody.innerHTML = transactions.map(tx => {
         const date = new Date(tx.transactionDate).toLocaleDateString();
-        const typeBadge = tx.type === 0 
-            ? '<span class="badge income">Income</span>' 
-            : '<span class="badge expense">Expense</span>';
+        const typeBadge = tx.type === 0
+            ? '<span class="badge income">Gelir</span>'
+            : '<span class="badge expense">Gider</span>';
         const amountClass = tx.type === 0 ? 'text-success' : 'text-danger';
         const sign = tx.type === 0 ? '+' : '-';
-        
+
         return `
             <tr>
                 <td>${date}</td>
@@ -292,7 +291,7 @@ function renderTransactions(transactions) {
                 <td>${typeBadge}</td>
                 <td style="font-weight: 600" class="${amountClass}">${sign}₺${tx.amount.toFixed(2)}</td>
                 <td>
-                    <button class="btn-danger btn-sm" onclick="deleteTransaction('${tx.id}')">Delete</button>
+                    <button class="btn-danger btn-sm" onclick="deleteTransaction('${tx.id}')">Sil</button>
                 </td>
             </tr>
         `;
@@ -302,10 +301,10 @@ function renderTransactions(transactions) {
 function renderRecentTransactions(transactions) {
     const container = document.getElementById('recent-transactions-list');
     if (!transactions || transactions.length === 0) {
-        container.innerHTML = '<p class="empty-state">No transactions yet. Add your first one!</p>';
+        container.innerHTML = '<p class="empty-state">Henüz işlem yok. İlk işlemini ekle!</p>';
         return;
     }
-    
+
     // We reuse the data-table styling for the recent list
     let html = '<table class="data-table"><tbody>';
     html += transactions.map(tx => {
@@ -325,7 +324,7 @@ function renderRecentTransactions(transactions) {
 }
 
 async function deleteTransaction(id) {
-    if (!confirm('Are you sure you want to delete this transaction?')) return;
+    if (!confirm('Bu işlemi silmek istediğinize emin misiniz?')) return;
     try {
         const res = await fetch(`${API_BASE}/transactions/${id}`, {
             method: 'DELETE',
@@ -334,7 +333,7 @@ async function deleteTransaction(id) {
         if (res.ok) {
             refreshData();
         } else {
-            alert('Failed to delete transaction.');
+            alert('İşlem silinemedi.');
         }
     } catch (e) {
         console.error(e);
@@ -362,7 +361,7 @@ async function fetchBudgets() {
 function renderBudgets(budgets) {
     const container = document.getElementById('budgets-list');
     if (!budgets || budgets.length === 0) {
-        container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1">No budgets configured for this month.</p>';
+        container.innerHTML = '<p class="empty-state" style="grid-column: 1 / -1">Bu ay için yapılandırılmış bütçe yok.</p>';
         return;
     }
 
@@ -377,20 +376,20 @@ function renderBudgets(budgets) {
                 <div class="budget-header">
                     <span class="budget-category">${bg.category}</span>
                     <div class="budget-actions">
-                        <button onclick="deleteBudget('${bg.id}')" title="Delete">
+                        <button onclick="deleteBudget('${bg.id}')" title="Sil">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
                 </div>
                 <div class="budget-stats">
-                    <span>₺${bg.spentAmount.toFixed(2)} spent</span>
+                    <span>₺${bg.spentAmount.toFixed(2)} harcandı</span>
                     <span>₺${bg.limitAmount.toFixed(2)} limit</span>
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill ${colorClass}" style="width: ${percent}%"></div>
                 </div>
                 <div style="text-align: right; margin-top: 8px; font-size: 0.75rem; color: var(--color-text-muted)">
-                    ${bg.percentUsed}% used
+                    %${bg.percentUsed} kullanıldı
                 </div>
             </div>
         `;
@@ -400,10 +399,10 @@ function renderBudgets(budgets) {
 function renderBudgetOverview(budgets) {
     const container = document.getElementById('budget-overview-list');
     if (!budgets || budgets.length === 0) {
-        container.innerHTML = '<p class="empty-state">No budgets configured.</p>';
+        container.innerHTML = '<p class="empty-state">Yapılandırılmış bütçe yok.</p>';
         return;
     }
-    
+
     let html = '<div style="display: flex; flex-direction: column; gap: 16px;">';
     html += budgets.map(bg => {
         const percent = Math.min(bg.percentUsed, 100);
@@ -428,7 +427,7 @@ function renderBudgetOverview(budgets) {
 }
 
 async function deleteBudget(id) {
-    if (!confirm('Are you sure you want to delete this budget?')) return;
+    if (!confirm('Bu bütçeyi silmek istediğinize emin misiniz?')) return;
     try {
         const res = await fetch(`${API_BASE}/budgets/${id}`, {
             method: 'DELETE',
@@ -437,7 +436,7 @@ async function deleteBudget(id) {
         if (res.ok) {
             refreshData();
         } else {
-            alert('Failed to delete budget.');
+            alert('Bütçe silinemedi.');
         }
     } catch (e) {
         console.error(e);
@@ -457,7 +456,7 @@ async function fetchSummary() {
             document.getElementById('stat-income').textContent = `₺${data.totalIncome.toFixed(2)}`;
             document.getElementById('stat-expense').textContent = `₺${data.totalExpenses.toFixed(2)}`;
             document.getElementById('stat-balance').textContent = `₺${data.netBalance.toFixed(2)}`;
-            
+
             // Update header balance
             document.getElementById('header-balance-val').textContent = `₺${data.netBalance.toFixed(2)}`;
             document.getElementById('header-balance-container').style.display = 'block';
@@ -480,7 +479,7 @@ async function fetchPortfolios() {
         if (res.ok) {
             const portfolios = await res.json();
             renderPortfoliosList(portfolios);
-            
+
             // Calculate total portfolio value for dashboard
             let totalVal = 0;
             for (let pf of portfolios) {
@@ -500,10 +499,10 @@ async function fetchPortfolios() {
 function renderPortfoliosList(portfolios) {
     const container = document.getElementById('portfolios-list');
     if (!portfolios || portfolios.length === 0) {
-        container.innerHTML = '<p class="empty-state">No portfolios yet.</p>';
+        container.innerHTML = '<p class="empty-state">Henüz portföy yok.</p>';
         return;
     }
-    
+
     container.innerHTML = portfolios.map(pf => `
         <div style="padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;" 
              onclick="selectPortfolio('${pf.id}', '${pf.name}')"
@@ -524,18 +523,18 @@ async function selectPortfolio(id, name) {
 
 async function refreshPortfolioDetails() {
     if (!currentPortfolioId) return;
-    
+
     try {
         // Fetch Analytics
         const anRes = await fetch(`${API_BASE}/portfolios/${currentPortfolioId}/analytics`, { headers: authHeaders() });
         if (anRes.ok) {
             const an = await anRes.json();
             document.getElementById('pf-detail-value').textContent = `₺${an.totalValue.toFixed(2)}`;
-            
+
             const absEl = document.getElementById('pf-detail-abs');
             absEl.textContent = `${an.absoluteReturnAmount >= 0 ? '+' : ''}₺${an.absoluteReturnAmount.toFixed(2)}`;
             absEl.style.color = an.absoluteReturnAmount >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
-            
+
             const twrEl = document.getElementById('pf-detail-twr');
             twrEl.textContent = `${an.twrPercentage >= 0 ? '+' : ''}${an.twrPercentage.toFixed(2)}%`;
             twrEl.style.color = an.twrPercentage >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
@@ -555,7 +554,7 @@ async function refreshPortfolioDetails() {
 function renderHoldings(holdings) {
     const tbody = document.getElementById('holdings-list');
     if (!holdings || holdings.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No holdings in this portfolio.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Bu portföyde varlık yok.</td></tr>';
         return;
     }
 
@@ -564,7 +563,7 @@ function renderHoldings(holdings) {
         const pnl = totalVal - (h.purchasePrice * h.quantity);
         const pnlColor = pnl >= 0 ? 'var(--color-success)' : 'var(--color-danger)';
         const pnlSign = pnl >= 0 ? '+' : '';
-        
+
         return `
             <tr>
                 <td style="font-weight: bold;">${h.symbol}</td>
@@ -584,7 +583,7 @@ function renderHoldings(holdings) {
                     <div style="font-size: 0.75rem; color: ${pnlColor}">${pnlSign}₺${pnl.toFixed(2)}</div>
                 </td>
                 <td>
-                    <button class="btn-danger btn-sm" onclick="deleteHolding('${h.id}')">Sell/Del</button>
+                    <button class="btn-danger btn-sm" onclick="deleteHolding('${h.id}')">Sat / Sil</button>
                 </td>
             </tr>
         `;
@@ -592,9 +591,9 @@ function renderHoldings(holdings) {
 }
 
 async function updatePrice(holdingId, currentPrice) {
-    const newPrice = prompt('Enter new current price (₺):', currentPrice);
+    const newPrice = prompt('Yeni güncel fiyatı girin (₺):', currentPrice);
     if (newPrice === null || isNaN(parseFloat(newPrice))) return;
-    
+
     try {
         const res = await fetch(`${API_BASE}/holdings/${holdingId}/price`, {
             method: 'PUT',
@@ -605,11 +604,11 @@ async function updatePrice(holdingId, currentPrice) {
             refreshPortfolioDetails();
             fetchPortfolios(); // Update dashboard total
         }
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
 }
 
 async function deleteHolding(holdingId) {
-    if (!confirm('Are you sure you want to remove this holding?')) return;
+    if (!confirm('Bu varlığı silmek istediğinize emin misiniz?')) return;
     try {
         const res = await fetch(`${API_BASE}/holdings/${holdingId}`, {
             method: 'DELETE',
@@ -619,7 +618,7 @@ async function deleteHolding(holdingId) {
             refreshPortfolioDetails();
             fetchPortfolios(); // Update dashboard total
         }
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -650,7 +649,7 @@ document.getElementById('portfolio-form').addEventListener('submit', async (e) =
     const btn = document.getElementById('pf-submit-btn');
     const errorEl = document.getElementById('pf-error');
     errorEl.textContent = '';
-    
+
     btn.disabled = true;
     try {
         const res = await fetch(`${API_BASE}/portfolios`, {
@@ -663,10 +662,10 @@ document.getElementById('portfolio-form').addEventListener('submit', async (e) =
             e.target.reset();
             fetchPortfolios();
         } else {
-            errorEl.textContent = 'Failed to create portfolio.';
+            errorEl.textContent = 'Portföy oluşturulamadı.';
         }
     } catch {
-        errorEl.textContent = 'Server error.';
+        errorEl.textContent = 'Sunucu hatası.';
     } finally {
         btn.disabled = false;
     }
@@ -675,11 +674,11 @@ document.getElementById('portfolio-form').addEventListener('submit', async (e) =
 document.getElementById('holding-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentPortfolioId) return;
-    
+
     const btn = document.getElementById('h-submit-btn');
     const errorEl = document.getElementById('h-error');
     errorEl.textContent = '';
-    
+
     const payload = {
         symbol: document.getElementById('h-symbol').value,
         name: document.getElementById('h-name').value,
@@ -703,10 +702,10 @@ document.getElementById('holding-form').addEventListener('submit', async (e) => 
             fetchPortfolios();
         } else {
             const err = await res.json();
-            errorEl.textContent = err.error || 'Failed to add holding.';
+            errorEl.textContent = err.error || 'Varlık eklenemedi.';
         }
     } catch {
-        errorEl.textContent = 'Server error.';
+        errorEl.textContent = 'Sunucu hatası.';
     } finally {
         btn.disabled = false;
     }
@@ -752,7 +751,7 @@ document.getElementById('transaction-form').addEventListener('submit', async (e)
     const btn = document.getElementById('tx-submit-btn');
     const errorEl = document.getElementById('tx-error');
     errorEl.textContent = '';
-    
+
     const payload = {
         type: parseInt(document.getElementById('tx-type').value),
         amount: parseFloat(document.getElementById('tx-amount').value),
@@ -774,10 +773,10 @@ document.getElementById('transaction-form').addEventListener('submit', async (e)
             refreshData();
         } else {
             const err = await res.json();
-            errorEl.textContent = err.error || 'Failed to save transaction.';
+            errorEl.textContent = err.error || 'İşlem kaydedilemedi.';
         }
     } catch {
-        errorEl.textContent = 'Server error.';
+        errorEl.textContent = 'Sunucu hatası.';
     } finally {
         btn.disabled = false;
     }
@@ -788,7 +787,7 @@ document.getElementById('budget-form').addEventListener('submit', async (e) => {
     const btn = document.getElementById('bg-submit-btn');
     const errorEl = document.getElementById('bg-error');
     errorEl.textContent = '';
-    
+
     const payload = {
         category: document.getElementById('bg-category').value,
         limitAmount: parseFloat(document.getElementById('bg-amount').value),
@@ -809,17 +808,17 @@ document.getElementById('budget-form').addEventListener('submit', async (e) => {
             refreshData();
         } else {
             const err = await res.json();
-            errorEl.textContent = err.error || 'Failed to save budget.';
+            errorEl.textContent = err.error || 'Bütçe kaydedilemedi.';
         }
     } catch {
-        errorEl.textContent = 'Server error.';
+        errorEl.textContent = 'Sunucu hatası.';
     } finally {
         btn.disabled = false;
     }
 });
 
 const originalUpdateUIForAuth = updateUIForAuth;
-updateUIForAuth = function() {
+updateUIForAuth = function () {
     originalUpdateUIForAuth();
     if (isAuthenticated()) {
         refreshData();
@@ -837,26 +836,27 @@ async function fetchAdminUsers() {
     if (!isAuthenticated()) return;
     const user = getUser();
     if (!user || user.role !== 'Admin') return;
-    
+
     try {
         const res = await fetch(`${API_BASE}/admin/users`, { headers: authHeaders() });
         if (res.ok) {
             const users = await res.json();
             const tbody = document.getElementById('admin-users-list');
             if (!users || users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Kullanıcı bulunamadı.</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = users.map(u => `
                 <tr>
-                    <td style="font-family: var(--font-mono); font-size: 0.7rem; color: var(--color-text-muted)">${u.id}</td>
                     <td>${u.email}</td>
                     <td>${u.fullName}</td>
                     <td>
                         <span class="badge ${u.role === 'Admin' ? 'income' : 'expense'}">${u.role}</span>
                     </td>
-                    <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-danger btn-sm">Sil</button>
+                    </td>
                 </tr>
             `).join('');
         } else {
