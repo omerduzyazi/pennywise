@@ -153,8 +153,11 @@ public class TransactionsController : ControllerBase
         var transactions = await _transactionRepo.FindAsync(t => t.UserId == userId);
         var list = transactions.ToList();
 
-        var totalIncome = list.Where(t => t.Type == TransactionType.Income).Sum(t => t.Amount);
-        var totalExpenses = list.Where(t => t.Type == TransactionType.Expense).Sum(t => t.Amount);
+        var grouped = list.GroupBy(t => t.Type)
+                          .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
+
+        var totalIncome = grouped.GetValueOrDefault(TransactionType.Income, 0m);
+        var totalExpenses = grouped.GetValueOrDefault(TransactionType.Expense, 0m);
 
         return Ok(new TransactionSummaryResponse(
             TotalIncome: totalIncome,

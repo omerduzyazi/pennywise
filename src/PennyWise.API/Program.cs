@@ -104,9 +104,16 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<PennyWiseDbContext>();
-    db.Database.Migrate();
 
-    // ── Seed Sample Data (Turkish) ─────────────────────────────────
+    if (db.Database.IsRelational())
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+    }
+
     if (!db.Users.Any())
     {
         var adminId = Guid.NewGuid();

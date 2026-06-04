@@ -12,6 +12,8 @@ namespace PennyWise.Tests;
 /// </summary>
 public class PennyWiseWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _dbName = $"TestDb_{Guid.NewGuid()}";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -22,9 +24,10 @@ public class PennyWiseWebApplicationFactory : WebApplicationFactory<Program>
             if (descriptor != null)
                 services.Remove(descriptor);
 
-            // Add InMemory database for testing
+            // Add InMemory database for testing — use stable name per factory instance
+            // so all requests within a test class share the same database
             services.AddDbContext<PennyWiseDbContext>(options =>
-                options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
+                options.UseInMemoryDatabase(_dbName));
         });
 
         builder.UseEnvironment("Development");

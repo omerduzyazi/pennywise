@@ -149,11 +149,13 @@ public class BudgetsController : ControllerBase
 
         var expenseList = expenses.ToList();
 
+        var expenseGroups = expenseList
+            .GroupBy(e => e.Category, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount), StringComparer.OrdinalIgnoreCase);
+
         var statuses = budgets.Select(b =>
         {
-            var spent = expenseList
-                .Where(e => e.Category.Equals(b.Category, StringComparison.OrdinalIgnoreCase))
-                .Sum(e => e.Amount);
+            var spent = expenseGroups.GetValueOrDefault(b.Category, 0m);
 
             return new BudgetStatusResponse(
                 Id: b.Id,
