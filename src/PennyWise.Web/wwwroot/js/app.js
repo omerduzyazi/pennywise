@@ -5,9 +5,7 @@
 
 const API_BASE = '/api';
 
-// ═══════════════════════════════════════════════════════════════
 // Auth State Management
-// ═══════════════════════════════════════════════════════════════
 
 function getToken() {
     return localStorage.getItem('pw_token');
@@ -37,9 +35,7 @@ function authHeaders() {
     return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 }
 
-// ═══════════════════════════════════════════════════════════════
 // UI State
-// ═══════════════════════════════════════════════════════════════
 
 function showAuthModal() {
     document.getElementById('auth-overlay').classList.remove('hidden');
@@ -81,9 +77,7 @@ function getGreetingText() {
     return 'Good evening';
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Auth Form Handlers
-// ═══════════════════════════════════════════════════════════════
 
 // Toggle between login and register
 document.getElementById('show-register').addEventListener('click', (e) => {
@@ -194,9 +188,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     updateUIForAuth();
 });
 
-// ═══════════════════════════════════════════════════════════════
 // Navigation
-// ═══════════════════════════════════════════════════════════════
 
 document.querySelectorAll('.dock-item').forEach(item => {
     item.addEventListener('click', (e) => {
@@ -226,9 +218,7 @@ function navigateTo(pageName) {
     if (pageName === 'admin') fetchAdminUsers();
 }
 
-// ═══════════════════════════════════════════════════════════════
 // API Health Check
-// ═══════════════════════════════════════════════════════════════
 
 async function checkApiHealth() {
     const dot = document.querySelector('.status-dot');
@@ -250,9 +240,7 @@ async function checkApiHealth() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Transactions API & UI
-// ═══════════════════════════════════════════════════════════════
 
 async function fetchTransactions() {
     if (!isAuthenticated()) return;
@@ -340,9 +328,7 @@ async function deleteTransaction(id) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Budgets API & UI
-// ═══════════════════════════════════════════════════════════════
 
 async function fetchBudgets() {
     if (!isAuthenticated()) return;
@@ -451,9 +437,7 @@ async function deleteBudget(id) {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Dashboard Summary
-// ═══════════════════════════════════════════════════════════════
 
 async function fetchSummary() {
     if (!isAuthenticated()) return;
@@ -474,9 +458,7 @@ async function fetchSummary() {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Portfolio & Analytics API & UI
-// ═══════════════════════════════════════════════════════════════
 
 let currentPortfolioId = null;
 
@@ -629,9 +611,7 @@ async function deleteHolding(holdingId) {
     } catch (e) { console.error(e); }
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Modals & Form Submissions (Continued)
-// ═══════════════════════════════════════════════════════════════
 
 const pfModal = document.getElementById('portfolio-modal-overlay');
 const hModal = document.getElementById('holding-modal-overlay');
@@ -726,9 +706,7 @@ function refreshData() {
     fetchPortfolios();
 }
 
-// ═══════════════════════════════════════════════════════════════
 // Init
-// ═══════════════════════════════════════════════════════════════
 
 const txModal = document.getElementById('transaction-modal-overlay');
 const bgModal = document.getElementById('budget-modal-overlay');
@@ -833,12 +811,8 @@ updateUIForAuth = function () {
     }
 };
 
-// ═══════════════════════════════════════════════════════════════
 // Init
-// ═══════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════════
 // Admin API & UI
-// ═══════════════════════════════════════════════════════════════
 
 async function fetchAdminUsers() {
     if (!isAuthenticated()) return;
