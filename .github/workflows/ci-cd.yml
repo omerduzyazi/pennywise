@@ -84,14 +84,11 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
         run: |
-          # SSH ayarlarını yapılandır
           mkdir -p ~/.ssh
           echo "$PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
 
-          # Dosyaları sunucuya kopyala (.git, bin, obj hariç)
-          rsync -avz --delete --exclude '.git' --exclude 'bin' --exclude 'obj' ./ $USER@$HOST:~/pennywise/
+          rsync -avz --delete --exclude '.git' --exclude 'bin' --exclude 'obj' -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" ./ $USER@$HOST:~/pennywise/
 
       - name: Restart Docker Compose on EC2
         env:
@@ -99,4 +96,4 @@ jobs:
           HOST: ${{ secrets.EC2_HOST }}
           USER: ${{ secrets.EC2_USER }}
         run: |
-          ssh -i ~/.ssh/id_rsa $USER@$HOST 'cd ~/pennywise && sudo docker compose up -d --build'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa $USER@$HOST 'cd ~/pennywise && sudo docker compose up -d --build'
