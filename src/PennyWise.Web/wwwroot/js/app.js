@@ -863,7 +863,7 @@ async function fetchAdminUsers() {
                         <span class="badge ${u.role === 'Admin' ? 'income' : 'expense'}">${u.role}</span>
                     </td>
                     <td>
-                        <button class="btn-danger btn-sm">Sil</button>
+                        <button class="btn-danger btn-sm" onclick="deleteAdminUser('${u.id}')">Sil</button>
                     </td>
                 </tr>
             `).join('');
@@ -872,6 +872,28 @@ async function fetchAdminUsers() {
         }
     } catch (e) {
         console.error('Error fetching admin users:', e);
+    }
+}
+
+async function deleteAdminUser(id) {
+    if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/admin/users/${id}`, {
+            method: 'DELETE',
+            headers: authHeaders()
+        });
+
+        if (res.ok) {
+            alert('Kullanıcı başarıyla silindi.');
+            fetchAdminUsers();
+        } else {
+            const errorText = await res.text();
+            alert(`Hata: ${errorText}`);
+        }
+    } catch (e) {
+        console.error('Error deleting user:', e);
+        alert('Kullanıcı silinemedi.');
     }
 }
 

@@ -32,4 +32,18 @@ public class AdminController : ControllerBase
 
         return Ok(userDtos);
     }
+
+    [HttpDelete("users/{id}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+        if (user == null) return NotFound("Kullanıcı bulunamadı.");
+
+        if (user.Role == "Admin") return BadRequest("Admin yetkisine sahip bir kullanıcıyı silemezsiniz.");
+
+        _userRepository.Remove(user);
+        await _userRepository.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
