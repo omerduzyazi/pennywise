@@ -34,3 +34,7 @@ pgdata/
 ## Coverage
 coverage/
 TestResults/
+
+## private files
+*.pem
+not.txt
